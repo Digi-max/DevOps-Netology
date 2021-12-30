@@ -43,12 +43,26 @@ for result in result_os.split('\n'):
 
 ### Ваш скрипт:
 ```python
-???
+#!/usr/bin/env python3
+
+import os
+
+
+bash_command = ["cd ~/netology/sysadm-homeworks", "git status"]
+result_os = os.popen(' && '.join(bash_command)).read()
+is_change = False
+for result in result_os.split('\n'):
+    if result.find('modified') != -1:
+        prepare_result = result.replace('\tmodified:   ', '')
+        print(bash_command[0].replace('cd ~', '')+'/'+prepare_result)
+#        break
 ```
 
 ### Вывод скрипта при запуске при тестировании:
-```
-???
+```bash
+vagrant@host1:~$ ./script_4-2.py
+/netology/sysadm-homeworks/03-sysadmin-04-os/README.md
+/netology/sysadm-homeworks/04-script-02-py/README.md
 ```
 
 ## Обязательная задача 3
