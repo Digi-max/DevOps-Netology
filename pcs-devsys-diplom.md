@@ -104,7 +104,7 @@ server {
         ssl_ciphers         HIGH:!aNULL:!MD5;
 }
 ```
-Проверем конфиг и рестарт:
+Проверяем конфиг и рестарт:
 ```bash
 vagrant@host1:~$ sudo nginx -t
 nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
