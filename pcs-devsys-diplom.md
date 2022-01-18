@@ -25,26 +25,26 @@ end
 
 ufw установлен в Ubuntu по умолчанию
 ```bash
-vagrant@vagrant:~$ sudo ufw allow 22
-vagrant@vagrant:~$ sudo ufw allow 443
+vagrant@host1:~$ sudo ufw allow 22
+vagrant@host1:~$ sudo ufw allow 443
 ```
 3. Установите hashicorp vault ([инструкция по ссылке](https://learn.hashicorp.com/tutorials/vault/getting-started-install?in=vault/getting-started#install-vault)).
 
 ```bash
-vagrant@vagrant:~$ curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-vagrant@vagrant:~$ sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-vagrant@vagrant:~$ sudo apt-get update && sudo apt-get install vault
+vagrant@host1:~$ curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+vagrant@host1:~$ sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+vagrant@host1:~$ sudo apt-get update && sudo apt-get install vault
 ```
 4. Cоздайте центр сертификации по инструкции ([ссылка](https://learn.hashicorp.com/tutorials/vault/pki-engine?in=vault/secrets-management)) и выпустите сертификат для использования его в настройке веб-сервера nginx (срок жизни сертификата - месяц).
 
 ```bash
-vagrant@vagrant:~$ sudo apt-get install jq
-vagrant@vagrant:~$ vault server -dev -dev-root-token-id root
-vagrant@vagrant:~$ export VAULT_ADDR=http://127.0.0.1:8200
-vagrant@vagrant:~$ export VAULT_TOKEN=root
-vagrant@vagrant:~$ vault secrets enable pki
+vagrant@host1:~$ sudo apt-get install jq
+vagrant@host1:~$ vault server -dev -dev-root-token-id root
+vagrant@host1:~$ export VAULT_ADDR=http://127.0.0.1:8200
+vagrant@host1:~$ export VAULT_TOKEN=root
+vagrant@host1:~$ vault secrets enable pki
 Success! Enabled the pki secrets engine at: pki/
-vagrant@vagrant:~$ vault secrets tune -max-lease-ttl=87600h pki
+vagrant@host1:~$ vault secrets tune -max-lease-ttl=87600h pki
 Success! Tuned the secrets engine at: pki/
 vagrant@host1:~$ vault secrets tune -max-lease-ttl=87600h pki
 Success! Tuned the secrets engine at: pki/
@@ -55,24 +55,24 @@ vagrant@host1:~$ vault write pki/config/urls \
 >      issuing_certificates="$VAULT_ADDR/v1/pki/ca" \
 >      crl_distribution_points="$VAULT_ADDR/v1/pki/crl"
 Success! Data written to: pki/config/urls
-vagrant@vagrant:~$ vault secrets enable -path=pki_int pki
+vagrant@host1:~$ vault secrets enable -path=pki_int pki
 Success! Enabled the pki secrets engine at: pki_int/
-vagrant@vagrant:~$ vault secrets tune -max-lease-ttl=43800h pki_int
+vagrant@host1:~$ vault secrets tune -max-lease-ttl=43800h pki_int
 Success! Tuned the secrets engine at: pki_int/
-vagrant@vagrant:~$ vault write -format=json pki_int/intermediate/generate/internal \
+vagrant@host1:~$ vault write -format=json pki_int/intermediate/generate/internal \
 common_>      common_name="example.com Intermediate Authority" \
 >      | jq -r '.data.csr' > pki_intermediate.csr
-vagrant@vagrant:~$ vault write -format=json pki/root/sign-intermediate csr=@pki_intermediate.csr \
+vagrant@host1:~$ vault write -format=json pki/root/sign-intermediate csr=@pki_intermediate.csr \
 >      format=pem_bundle ttl="43800h" \
 >      | jq -r '.data.certificate' > intermediate.cert.pem
-vagrant@vagrant:~$ vault write pki_int/intermediate/set-signed certificate=@intermediate.cert.pem
+vagrant@host1:~$ vault write pki_int/intermediate/set-signed certificate=@intermediate.cert.pem
 Success! Data written to: pki_int/intermediate/set-signed
-vagrant@vagrant:~$ vault write pki_int/roles/example-dot-com \
+vagrant@host1:~$ vault write pki_int/roles/example-dot-com \
 >      allowed_domains="example.com" \
 >      allow_subdomains=true \
 >      max_ttl="720h"
 Success! Data written to: pki_int/roles/example-dot-com
-vault write -format=json pki_int/issue/example-dot-com common_name="test.example.com" ttl="720h" > test.example.com.crt
+vagrant@host1:~$ vault write -format=json pki_int/issue/example-dot-com common_name="test.example.com" ttl="720h" > test.example.com.crt
 vagrant@host1:~$ cat test.example.com.crt | jq -r .data.certificate > test.example.pem
 vagrant@host1:~$ cat test.example.com.crt | jq -r .data.issuing_ca >> test.example.pem
 vagrant@host1:~$ sudo cp test.example.pem /etc/nginx/ssl/
@@ -87,7 +87,7 @@ vagrant@host1:~$ sudo cp test.example.key /etc/nginx/ssl/
 6. Установите nginx.
 
 ```bash
-sudo apt install nginx
+vagrant@host1:~$ sudo apt install nginx
 ```
 7. По инструкции ([ссылка](https://nginx.org/en/docs/http/configuring_https_servers.html)) настройте nginx на https, используя ранее подготовленный сертификат:
   - можно использовать стандартную стартовую страницу nginx для демонстрации работы сервера;
@@ -106,10 +106,10 @@ server {
 ```
 Проверем конфиг и рестарт:
 ```bash
-vagrant@host1:/etc/nginx$ sudo nginx -t
+vagrant@host1:~$ sudo nginx -t
 nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
 nginx: configuration file /etc/nginx/nginx.conf test is successful
-sudo systemctl restart nginx
+vagrant@host1:~$ sudo systemctl restart nginx
 ```
 8. Откройте в браузере на хосте https адрес страницы, которую обслуживает сервер nginx.
 
